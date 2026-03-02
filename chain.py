@@ -46,10 +46,14 @@ def _save_state(state: dict) -> None:
 
 async def poll_chain(
     chain_name: str,
+    start_block: int | None = None,
 ) -> AsyncIterator[tuple[str, str, bytes]]:
     """
     Async generator that yields (tx_hash, chain_name, calldata) for every
     transaction in each new block on the given chain.
+
+    start_block: if provided, overrides state.json and begins processing from
+                 this block number (inclusive). Useful for dry-run / replay.
     """
     api_key = os.environ["ALCHEMY_API_KEY"]
     config = CHAINS[chain_name]
@@ -58,10 +62,13 @@ async def poll_chain(
 
     w3 = AsyncWeb3(AsyncHTTPProvider(rpc_url))
 
-    state = _load_state()
-    last_block: int | None = state.get(chain_name)
-
-    logger.info(f"[{chain_name}] Starting poller (last block: {last_block})")
+    if start_block is not None:
+        last_block: int | None = start_block - 1
+        logger.info(f"[{chain_name}] Starting poller from block {start_block} (override)")
+    else:
+        state = _load_state()
+        last_block = state.get(chain_name)
+        logger.info(f"[{chain_name}] Starting poller (last block: {last_block})")
 
     while True:
         try:
