@@ -62,11 +62,12 @@ async def poll_chain(
 
     w3 = AsyncWeb3(AsyncHTTPProvider(rpc_url))
 
+    state = _load_state()
+
     if start_block is not None:
         last_block: int | None = start_block - 1
         logger.info(f"[{chain_name}] Starting poller from block {start_block} (override)")
     else:
-        state = _load_state()
         last_block = state.get(chain_name)
         logger.info(f"[{chain_name}] Starting poller (last block: {last_block})")
 
@@ -97,7 +98,7 @@ async def poll_chain(
                 last_block = block_num
                 state[chain_name] = last_block
                 _save_state(state)
-                logger.debug(f"[{chain_name}] Processed block {block_num}")
+                logger.info(f"[{chain_name}] Processed block {block_num}")
 
         except Exception as exc:
             logger.error(f"[{chain_name}] Poller error: {exc}")
